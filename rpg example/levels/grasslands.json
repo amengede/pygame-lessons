@@ -1,0 +1,26 @@
+[
+    {
+        "Walls":[
+            {
+                "FirstPosition": [100,100],
+                "SecondPosition": [500,50]
+            },
+            {
+                "FirstPosition": [500,50],
+                "SecondPosition": [550,400]
+            },
+            {
+                "FirstPosition": [550,400],
+                "SecondPosition": [350,320]
+            },
+            {
+                "FirstPosition": [350,320],
+                "SecondPosition": [120,380]
+            },
+            {
+                "FirstPosition": [120,380],
+                "SecondPosition": [100,100]
+            }
+        ]
+    }
+]
