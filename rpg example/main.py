@@ -1,5 +1,6 @@
 import pygame
 import pathlib
+from openal import *
 
 ############################### Model   #######################################
 
@@ -53,6 +54,13 @@ class Rectangle(GenericGraphicsObject):
 class Button(GenericGraphicsObject):
     def __init__(self, left, top, width, height, game, **kwargs):
         super().__init__()
+
+        #sound effects
+        self.sfx_enter = oalOpen("sfx/click on.wav")
+        self.sfx_leave = oalOpen("sfx/click off.wav")
+        self.sfx_beep = oalOpen("sfx/beep.wav")
+
+        self.value = 2
         self.highlighted = False
         self.text = ''
         self.rect = pygame.Rect(left,top,width,height)
@@ -61,6 +69,10 @@ class Button(GenericGraphicsObject):
         self.width = width
         self.height = height
         self.game = game
+
+        self.state = self.mouse_inside()
+        self.last_state = False
+
         if 'colour' in kwargs:
             self.colour_original = kwargs['colour']
         if 'text_colour' in kwargs:
@@ -83,7 +95,19 @@ class Button(GenericGraphicsObject):
         return (x>self.left and y>self.top and x<(self.left+self.width) and y<(self.top+self.height))
 
     def update(self):
-        if self.mouse_inside() or self.highlighted:
+        #handle mouse
+        has_mouse = self.mouse_inside()
+        if has_mouse:
+            self.state = True
+            if self.last_state == False:
+                self.sfx_enter.play()
+        else:
+            self.state = False
+            if self.last_state == True:
+                self.sfx_leave.play()
+        self.last_state = self.state
+        
+        if has_mouse or self.highlighted:
             self.colour = self.text_colour_original
             self.text_colour = self.colour_original
         else:
@@ -115,6 +139,7 @@ class View:
         self.graphics_objects.insert(insertion_point,obj)
     
     def draw_queue(self):
+        #painter's algorithm
         while len(self.graphics_objects)>0:
             self.graphics_objects.pop(0).draw()
 
@@ -136,6 +161,7 @@ class App:
         self.control_objects.append(StartMenu(self))
         self.game_loop()
         pygame.quit()
+        oalQuit()
     
     def game_loop(self):
         running = True
@@ -182,15 +208,17 @@ class StartMenu:
         if event.type==pygame.MOUSEBUTTONDOWN:
             for c in self.components:
                 if c.mouse_inside() and c.can_click:
-                    c.click_action()
+                    c.click_action(c)
 
-    def select_clicked(self):
+    def select_clicked(self,button):
         self.parent.control_objects.pop(self.parent.control_objects.index(self))
         self.parent.control_objects.append(LevelSelectMenu(self.parent))
         self.parent.state = "load"
+        button.sfx_beep.play()
 
 class LevelSelectMenu:
     def __init__(self,parent):
+        self.value = 1
         self.type = "load"
         self.components = []
         self.parent = parent
@@ -231,6 +259,7 @@ class LevelSelectMenu:
         self.components.append(play_button)
 
     def down_clicked(self,entry):
+        entry.sfx_beep.play()
         entry_to_remove = self.file_entries[0]
         self.file_entries.pop(0)
         self.components.pop(self.components.index(entry_to_remove))
@@ -253,6 +282,7 @@ class LevelSelectMenu:
         self.components.append(entry_to_add)
 
     def up_clicked(self,entry):
+        entry.sfx_beep.play()
         for entry in self.file_entries:
             entry.top += 34
             entry.rect.move_ip(0,34)
@@ -295,17 +325,22 @@ class LevelSelectMenu:
                     c.click_action(c)
 
     def play_clicked(self,entry):
+        entry.sfx_beep.play()
         if self.currently_selected_level==None:
             return
         else:
             print(f'let\'s play {self.currently_selected_level.text} !')
     
     def entry_clicked(self,entry):
+        entry.sfx_beep.play()
         if self.currently_selected_level != None:
             self.currently_selected_level.highlighted = False
         self.currently_selected_level = entry
         entry.highlighted = True
-        
+
+class Game:
+    pass
+
 def main():
     app = App()
 
