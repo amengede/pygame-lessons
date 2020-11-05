@@ -1,5 +1,6 @@
 # http://kidscancode.org/lessons/
 # http://opengameart.org
+# open audio library: https://pypi.org/project/PyOpenAL/
 import pygame
 import random
 from openal import *
@@ -40,6 +41,7 @@ bullet_img = pygame.image.load("gfx/laserRed16.png").convert()
 bullet_img.set_colorkey(BLACK)
 
 # sfx
+# 16bit, 44100
 sfx_music = oalOpen("sfx/Master of Puppets.wav")
 sfx_music.set_gain(0.5)
 sfx_music.play()

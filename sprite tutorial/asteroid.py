@@ -34,6 +34,20 @@ class Player(pygame.sprite.Sprite):
         self.speedx = 0
 
     def update(self):
+        """
+        #move player
+        #self.x += self.x_speed
+        hits = pygame.sprite.spritecollide(self, blocks, False)
+        if hits:
+            #undo the move
+            #self.x -= self.x_speed
+        #move player
+        #self.y += self.gravity
+        hits = pygame.sprite.spritecollide(self, ground_blocks, False)
+        if hits:
+            #undo the move
+            #self.y = hits[0].y
+        """
         self.speedx = 0
         keystate = pygame.key.get_pressed()
         if keystate[pygame.K_LEFT]:
