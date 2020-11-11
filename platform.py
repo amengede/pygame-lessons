@@ -111,7 +111,7 @@ while True: # game loop
     player.update()
     player.draw()
     pygame.display.update() # update display
-    clock.tick(60)
+    clock.tick()
     fps = clock.get_fps()
     pygame.display.set_caption("Running at "+str(int(fps))+" fps")
     tiles = []

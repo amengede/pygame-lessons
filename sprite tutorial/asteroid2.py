@@ -67,7 +67,7 @@ for i in range(9):
 # 16bit, 44100
 sfx_music = oalOpen("sfx/Master of Puppets.wav")
 sfx_music.set_gain(0.5)
-sfx_music.play()
+#sfx_music.play()
 sfx_shoot = oalOpen("sfx/shoot.wav")
 sfx_shoot.set_gain(0.5)
 sfx_destroy = oalOpen("sfx/hit.wav")
