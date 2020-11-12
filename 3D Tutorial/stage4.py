@@ -33,6 +33,11 @@ def draw_text(surf, text, size, x, y):
     text_rect.midtop = (x, y)
     surf.blit(text_surface, text_rect)
 
+def translate(point,translation):
+    (x,y) = point
+    (dx,dy) = translation
+    return (int(x + dx),int(y + dy))
+
 def rotate_point(point,angle):
     (x,y) = point
     theta = math.radians(angle)
@@ -51,12 +56,17 @@ def clip_line(line_a,line_b):
     y = (num_a*(y3 - y4) - (y1 - y2)*num_b)/den
     return (x,y)
 
+def scale(point,factor_x,factor_y=None):
+    if factor_y==None:
+        factor_y = factor_x
+    (x,y) = point
+    return (x*factor_x,y*factor_y)
+
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.radius = 16
-        self.x = 150
-        self.y = 150
+        self.position = (150,150)
         self.original_image = pygame.Surface((32,32))
         pygame.draw.circle(self.original_image,RED,(16,16),self.radius)
         pygame.draw.line(self.original_image,BLACK,(16,16),(32,16))
@@ -65,7 +75,8 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.speed = 2
         self.camera_z = 30
-        self.frustrum = ((-150,-150),(0,-16),(150,-150))
+        self.near_plane = ((-32,-4),(32,-4))
+        self.energy = 0
     
     def update(self):
         #take inputs
@@ -79,23 +90,35 @@ class Player(pygame.sprite.Sprite):
             if self.direction < 0:
                 self.direction += 360
         if keystate[pygame.K_UP]:
-            self.x += self.speed*math.cos(math.radians(self.direction))
-            self.y -= self.speed*math.sin(math.radians(self.direction))
+            change_in_position = (self.speed*math.cos(math.radians(self.direction)), -self.speed*math.sin(math.radians(self.direction)))
+            self.position = translate(self.position,change_in_position)
         if keystate[pygame.K_DOWN]:
-            self.x -= self.speed*math.cos(math.radians(self.direction))
-            self.y += self.speed*math.sin(math.radians(self.direction))
+            change_in_position = (-self.speed*math.cos(math.radians(self.direction)), self.speed*math.sin(math.radians(self.direction)))
+            self.position = translate(self.position,change_in_position)
+        if keystate[pygame.K_SPACE] and self.camera_z==30:
+            self.energy = 20
         
+        self.camera_z += self.energy
+        self.energy -= 1
+        if self.camera_z <= 30:
+            self.energy = 0
+            self.camera_z = 30
+        #apply transformations
+        self.model_to_world_transform()
+        self.world_to_view_transform()
+        #the player isn't drawn, so no need to put it in
+        #projection coordinates
+    
+    def model_to_world_transform(self):
         #apply model to world coordinate transformation
         #rotate first
         self.image = pygame.transform.rotate(self.original_image, self.direction)
-        old_center = self.rect.center
-        rotated_rect = self.image.get_rect()
-        rotated_rect.center = old_center
 
         #then translate into place
-        self.rect = rotated_rect.copy()
-        self.rect.center = (int(self.x),int(self.y))
+        self.rect = self.image.get_rect()
+        self.rect.center = self.position
 
+    def world_to_view_transform(self):
         #apply world to view coordinate transformation
         #rotate then transate
         rotated_image = pygame.transform.rotate(self.original_image, 90)
@@ -103,9 +126,8 @@ class Player(pygame.sprite.Sprite):
         rotated_rect.center = (150,150)
         #blit to view
         VIEW_SURFACE.blit(rotated_image,rotated_rect)
-        #draw view frustrum
-        pygame.draw.line(VIEW_SURFACE,WHITE,(0,0),(150,134))
-        pygame.draw.line(VIEW_SURFACE,WHITE,(300,0),(150,134))
+        #draw the near plane
+        pygame.draw.line(VIEW_SURFACE,WHITE,translate(self.near_plane[0],(150,150)),translate(self.near_plane[1],(150,150)))
 
 class Wall(pygame.sprite.Sprite):
     def __init__(self,pos_a,pos_b,colour):
@@ -129,54 +151,74 @@ class Wall(pygame.sprite.Sprite):
         self.rect.top = top
     
     def update(self):
-        #View transformation
-        #find position relative to camera
-        pos_a_translated = (self.pos_a[0] - player.x,self.pos_a[1] - player.y)
-        pos_b_translated = (self.pos_b[0] - player.x,self.pos_b[1] - player.y)
-        #rotate opposite to camera motion
-        pos_a_rotated = rotate_point(pos_a_translated,90-player.direction)
-        pos_b_rotated = rotate_point(pos_b_translated,90-player.direction)
-        pygame.draw.line(VIEW_SURFACE,self.colour,(pos_a_rotated[0]+150,pos_a_rotated[1]+150),
-                                                    (pos_b_rotated[0]+150,pos_b_rotated[1]+150))
-        
-        #Projection transformation
-        #in the view portal, a point's height (y-coordinate) can represent its depth
-        (x_a,depth_a) = (pos_a_rotated[0],-pos_a_rotated[1])
-        (x_b,depth_b) = (pos_b_rotated[0],-pos_b_rotated[1])
+        #wall is already defined in world coordinates
+        self.world_to_view_transform()
+        self.view_to_projection_transform()
 
-        if depth_a < 16 and depth_b < 16:
+    def world_to_view_transform(self):
+        #find position relative to camera
+        cam = (-player.position[0],-player.position[1])
+        self.pos_a_view = translate(self.pos_a,cam)
+        self.pos_b_view = translate(self.pos_b,cam)
+        #rotate 90 degrees counter clockwise, then opposite camera motion
+        opposite_cam = 90-player.direction
+        self.pos_a_view = rotate_point(self.pos_a_view,opposite_cam)
+        self.pos_b_view = rotate_point(self.pos_b_view,opposite_cam)
+        pygame.draw.line(VIEW_SURFACE,self.colour,translate(self.pos_a_view,(150,150)),
+                                                    translate(self.pos_b_view,(150,150)))
+    
+    def view_to_projection_transform(self):
+        #Projection transformation
+        #fetch the top-down coordinates
+        (x_a,depth_a) = self.pos_a_view
+        (x_b,depth_b) = self.pos_b_view
+        """depth is represented by the y-coordinate, if depth is positive then a point
+        is effectively behind the camera.
+        The first check is to see whether both ends of the wall are behind the camera.
+        If so, don't draw """
+
+        if depth_a >= 0 and depth_b >= 0:
             return
         
-        if depth_a < 16:
-            if x_a <= 0:
-                (x_a,depth_a) = clip_line(((x_a,-depth_a),(x_b,-depth_b)),(player.frustrum[0],player.frustrum[1]))
-                depth_a *= -1
-            else:
-                (x_a,depth_a) = clip_line(((x_a,-depth_a),(x_b,-depth_b)),(player.frustrum[2],player.frustrum[1]))
-                depth_a *= -1
-        
-        if depth_b < 16:
-            if x_b <= 0:
-                (x_b,depth_b) = clip_line(((x_a,-depth_a),(x_b,-depth_b)),(player.frustrum[0],player.frustrum[1]))
-                depth_b *= -1
-            else:
-                (x_b,depth_b) = clip_line(((x_a,-depth_a),(x_b,-depth_b)),(player.frustrum[2],player.frustrum[1]))
-                depth_b *= -1
-        
-        x_a = int(150*x_a / depth_a)
-        top_a = int(-150*(self.z-player.camera_z) / depth_a)
-        bottom_a = int(-150*(self.z+self.height-player.camera_z) / depth_a)
-            
-        x_b = int(150*x_b / depth_b)
-        top_b = int(-150*(self.z-player.camera_z) / depth_b)
-        bottom_b = int(-150*(self.z+self.height-player.camera_z) / depth_b)
+        """Next, check if one of the points is behind the camera.
+        If it is, then find the intersection point of the wall with the near plane"""
 
-        points = (
-                    (x_a + 150,top_a + 150),
-                    (x_b + 150,top_b + 150),
-                    (x_b + 150,bottom_b + 150),
-                    (x_a + 150,bottom_a + 150)
-                )
+        if depth_a >= 0:
+            (x_a,depth_a) = clip_line(((x_a,depth_a),(x_b,depth_b)),player.near_plane)
+        
+        if depth_b >= 0:
+            (x_b,depth_b) = clip_line(((x_a,depth_a),(x_b,depth_b)),player.near_plane)
+        
+        """now for the calculations, the depth will have to be flipped to a positive value"""
+        depth_a *= -1
+        x_a = self.pos_a_view[0]/depth_a
+        top_a = -(self.z-player.camera_z)/depth_a
+        bottom_a = -(self.z+self.height-player.camera_z)/depth_a
+
+        depth_b *= -1
+        x_b = self.pos_b_view[0]/depth_b
+        top_b = -(self.z-player.camera_z)/depth_b
+        bottom_b = -(self.z+self.height-player.camera_z)/depth_b
+
+        points = [
+                    (x_a,top_a),
+                    (x_b,top_b),
+                    (x_b,bottom_b),
+                    (x_a,bottom_a)
+                ]
+        """
+            These points are now in normalised device coordinates (NDC),
+            They range from -1 to 1 where:
+                x: -1 is left, 0 is centre, 1 is right
+                x: -1 is top, 0 is centre, 1 is bottom
+            and values outside this range are off the screen.
+
+            In order to graph these points we need to multiply them by half the screen width and half the screen height,
+            then add the position of the screen centre
+        """
+        for i in range(len(points)):
+            points[i] = scale(points[i],150,150)
+            points[i] = translate(points[i],(150,150))
 
         pygame.draw.polygon(PROJECTION_SURFACE, self.colour, points,1)
 

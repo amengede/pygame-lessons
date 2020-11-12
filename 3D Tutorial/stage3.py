@@ -33,6 +33,11 @@ def draw_text(surf, text, size, x, y):
     text_rect.midtop = (x, y)
     surf.blit(text_surface, text_rect)
 
+def translate(point,translation):
+    (x,y) = point
+    (dx,dy) = translation
+    return (int(x + dx),int(y + dy))
+
 def rotate_point(point,angle):
     (x,y) = point
     theta = math.radians(angle)
@@ -40,12 +45,17 @@ def rotate_point(point,angle):
     rotated_y = -x*math.sin(theta) + y*math.cos(theta)
     return (rotated_x,rotated_y)
 
+def scale(point,factor_x,factor_y=None):
+    if factor_y==None:
+        factor_y = factor_x
+    (x,y) = point
+    return (x*factor_x,y*factor_y)
+
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.radius = 16
-        self.x = 150
-        self.y = 150
+        self.position = (150,150)
         self.original_image = pygame.Surface((32,32))
         pygame.draw.circle(self.original_image,RED,(16,16),self.radius)
         pygame.draw.line(self.original_image,BLACK,(16,16),(32,16))
@@ -67,23 +77,28 @@ class Player(pygame.sprite.Sprite):
             if self.direction < 0:
                 self.direction += 360
         if keystate[pygame.K_UP]:
-            self.x += self.speed*math.cos(math.radians(self.direction))
-            self.y -= self.speed*math.sin(math.radians(self.direction))
+            change_in_position = (self.speed*math.cos(math.radians(self.direction)), -self.speed*math.sin(math.radians(self.direction)))
+            self.position = translate(self.position,change_in_position)
         if keystate[pygame.K_DOWN]:
-            self.x -= self.speed*math.cos(math.radians(self.direction))
-            self.y += self.speed*math.sin(math.radians(self.direction))
+            change_in_position = (-self.speed*math.cos(math.radians(self.direction)), self.speed*math.sin(math.radians(self.direction)))
+            self.position = translate(self.position,change_in_position)
         
+        #apply transformations
+        self.model_to_world_transform()
+        self.world_to_view_transform()
+        #the player isn't drawn, so no need to put it in
+        #projection coordinates
+    
+    def model_to_world_transform(self):
         #apply model to world coordinate transformation
         #rotate first
         self.image = pygame.transform.rotate(self.original_image, self.direction)
-        old_center = self.rect.center
-        rotated_rect = self.image.get_rect()
-        rotated_rect.center = old_center
 
         #then translate into place
-        self.rect = rotated_rect.copy()
-        self.rect.center = (int(self.x),int(self.y))
+        self.rect = self.image.get_rect()
+        self.rect.center = self.position
 
+    def world_to_view_transform(self):
         #apply world to view coordinate transformation
         #rotate then transate
         rotated_image = pygame.transform.rotate(self.original_image, 90)
@@ -114,35 +129,56 @@ class Wall(pygame.sprite.Sprite):
         self.rect.top = top
     
     def update(self):
-        #View transformation
+        #wall is already defined in world coordinates
+        self.world_to_view_transform()
+        self.view_to_projection_transform()
+
+    def world_to_view_transform(self):
         #find position relative to camera
-        pos_a_translated = (self.pos_a[0] - player.x,self.pos_a[1] - player.y)
-        pos_b_translated = (self.pos_b[0] - player.x,self.pos_b[1] - player.y)
-        #rotate opposite to camera motion
-        pos_a_rotated = rotate_point(pos_a_translated,90-player.direction)
-        pos_b_rotated = rotate_point(pos_b_translated,90-player.direction)
-        pygame.draw.line(VIEW_SURFACE,self.colour,(pos_a_rotated[0]+150,pos_a_rotated[1]+150),
-                                                    (pos_b_rotated[0]+150,pos_b_rotated[1]+150))
-        
+        cam = (-player.position[0],-player.position[1])
+        self.pos_a_view = translate(self.pos_a,cam)
+        self.pos_b_view = translate(self.pos_b,cam)
+        #rotate 90 degrees counter clockwise, then opposite camera motion
+        opposite_cam = 90-player.direction
+        self.pos_a_view = rotate_point(self.pos_a_view,opposite_cam)
+        self.pos_b_view = rotate_point(self.pos_b_view,opposite_cam)
+        pygame.draw.line(VIEW_SURFACE,self.colour,translate(self.pos_a_view,(150,150)),
+                                                    translate(self.pos_b_view,(150,150)))
+    
+    def view_to_projection_transform(self):
         #Projection transformation
         #in the view portal, a point's height (y-coordinate) can represent its depth
+        depth_a = -self.pos_a_view[1]
+        #depth_a = abs(self.pos_a_view[1])
+        x_a = self.pos_a_view[0]/depth_a
+        top_a = -(self.z-player.camera_z)/depth_a
+        bottom_a = -(self.z+self.height-player.camera_z)/depth_a
 
-        depth_a = -pos_a_rotated[1]
-        x_a = int(150*pos_a_rotated[0] / depth_a)
-        top_a = int(-150*(self.z-player.camera_z) / depth_a)
-        bottom_a = int(-150*(self.z+self.height-player.camera_z) / depth_a)
+        depth_b = -self.pos_b_view[1]
+        #depth_b = abs(self.pos_b_view[1])
+        x_b = self.pos_b_view[0]/depth_b
+        top_b = -(self.z-player.camera_z)/depth_b
+        bottom_b = -(self.z+self.height-player.camera_z)/depth_b
 
-        depth_b = -pos_b_rotated[1]
-        x_b = int(150*pos_b_rotated[0] / depth_b)
-        top_b = int(-150*(self.z-player.camera_z) / depth_b)
-        bottom_b = int(-150*(self.z+self.height-player.camera_z) / depth_b)
+        points = [
+                    (x_a,top_a),
+                    (x_b,top_b),
+                    (x_b,bottom_b),
+                    (x_a,bottom_a)
+                ]
+        """
+            These points are now in normalised device coordinates (NDC),
+            They range from -1 to 1 where:
+                x: -1 is left, 0 is centre, 1 is right
+                x: -1 is top, 0 is centre, 1 is bottom
+            and values outside this range are off the screen.
 
-        points = (
-                    (x_a + 150,top_a + 150),
-                    (x_b + 150,top_b + 150),
-                    (x_b + 150,bottom_b + 150),
-                    (x_a + 150,bottom_a + 150)
-                )
+            In order to graph these points we need to multiply them by half the screen width and half the screen height,
+            then add the position of the screen centre
+        """
+        for i in range(len(points)):
+            points[i] = scale(points[i],150,150)
+            points[i] = translate(points[i],(150,150))
 
         pygame.draw.polygon(PROJECTION_SURFACE, self.colour, points,1)
 
