@@ -39,10 +39,10 @@ def translate(point,translation):
     return (int(x + dx),int(y + dy))
 
 def rotate_point(point,angle):
-    (x,y) = point
+    (x_old,y_old) = point
     theta = math.radians(angle)
-    rotated_x = x*math.cos(theta) + y*math.sin(theta)
-    rotated_y = -x*math.sin(theta) + y*math.cos(theta)
+    rotated_x = x_old*math.cos(theta) + y_old*math.sin(theta)
+    rotated_y = -x_old*math.sin(theta) + y_old*math.cos(theta)
     return (rotated_x,rotated_y)
 
 class Player(pygame.sprite.Sprite):

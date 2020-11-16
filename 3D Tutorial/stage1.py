@@ -35,6 +35,7 @@ def draw_text(surf, text, size, x, y):
 
 def translate(point,translation):
     (x,y) = point
+    #d = delta = change
     (dx,dy) = translation
     return (int(x + dx),int(y + dy))
 
@@ -63,6 +64,9 @@ class Player(pygame.sprite.Sprite):
             if self.direction < 0:
                 self.direction += 360
         if keystate[pygame.K_UP]:
+            #cos: horizontal movement
+            #sin: vertical movement (must multiply by -1)
+            #radians: the angle measurement system that python math library uses
             change_in_position = (self.speed*math.cos(math.radians(self.direction)), -self.speed*math.sin(math.radians(self.direction)))
             self.position = translate(self.position,change_in_position)
         if keystate[pygame.K_DOWN]:
@@ -144,6 +148,9 @@ RESTRICTED.add(wall)
 running = True
 while running:
     VIEW_SURFACE.fill(BLACK)
+    MODEL_SURFACE.fill(BLACK)
+    PROJECTION_SURFACE.fill(BLACK)
+
     for event in pygame.event.get():
         if event.type==pygame.QUIT:
             running = False
@@ -152,10 +159,8 @@ while running:
 
     SCREEN.fill(BLACK)
 
-    MODEL_SURFACE.fill(BLACK)
+    
     GAME_OBJECTS.draw(MODEL_SURFACE)
-
-    PROJECTION_SURFACE.fill(BLACK)
 
     SCREEN.blit(MODEL_SURFACE,MODEL_RECT)
     SCREEN.blit(VIEW_SURFACE,VIEW_RECT)

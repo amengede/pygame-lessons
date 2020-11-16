@@ -13,19 +13,19 @@ YELLOW = (255,255,0)
 PURPLE = (128,0,255)
 WHITE = (255,255,255)
 
-SCREEN = pygame.display.set_mode((960,500))
+SCREEN_WIDTH = 450
+SCREEN_HEIGHT = 300
+SCREEN = pygame.display.set_mode((SCREEN_WIDTH*2 + 30,SCREEN_HEIGHT + 100))
 CLOCK = pygame.time.Clock()
 
-MODEL_SURFACE = pygame.Surface((300,300))
-MODEL_RECT = pygame.Rect(10,50,300,300)
+VIEW_SURFACE = pygame.Surface((SCREEN_WIDTH,SCREEN_HEIGHT))
+VIEW_RECT = pygame.Rect(10,50,SCREEN_WIDTH,SCREEN_HEIGHT)
 
-VIEW_SURFACE = pygame.Surface((300,300))
-VIEW_RECT = pygame.Rect(330,50,300,300)
-
-PROJECTION_SURFACE = pygame.Surface((300,300))
-PROJECTION_RECT = pygame.Rect(650,50,300,300)
+PROJECTION_SURFACE = pygame.Surface((SCREEN_WIDTH,SCREEN_HEIGHT))
+PROJECTION_RECT = pygame.Rect(SCREEN_WIDTH + 20,50,SCREEN_WIDTH,SCREEN_HEIGHT)
 
 font_name = pygame.font.match_font('arial')
+
 def draw_text(surf, text, size, x, y):
     font = pygame.font.Font(font_name, size)
     text_surface = font.render(text, True, WHITE)
@@ -62,15 +62,39 @@ def scale(point,factor_x,factor_y=None):
     (x,y) = point
     return (x*factor_x,y*factor_y)
 
+def importData(filename):
+    with open(filename,'r') as f:
+        line = f.readline()
+        while line:
+            if line[0]=='w':
+                #wall
+                # w(a_x,a_y,b_x,b_y)
+                line = line[2:-2].replace('\n','').split(',')
+                #print(line)
+                l = [int(item) for item in line]
+                #print(l)
+                w = Wall((l[0],l[1]),(l[2],l[3]))
+                GAME_OBJECTS.add(w)
+                RESTRICTED.add(w)
+            elif line[0]=='p':
+                #player
+                # p(x,y,direction)
+                line = line[2:-2].replace('\n','').split(',')
+                l = [int(item) for item in line]
+                player = Player(l[0],l[1],l[2])
+                GAME_OBJECTS.add(player)
+            line = f.readline()
+        return player
+
 class Player(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self,x,y,direction):
         pygame.sprite.Sprite.__init__(self)
         self.radius = 16
-        self.position = (150,150)
+        self.position = (x,y)
         self.original_image = pygame.Surface((32,32))
         pygame.draw.circle(self.original_image,RED,(16,16),self.radius)
         pygame.draw.line(self.original_image,BLACK,(16,16),(32,16))
-        self.direction = 0
+        self.direction = direction
         self.image = self.original_image.copy()
         self.rect = self.image.get_rect()
         self.speed = 2
@@ -121,16 +145,17 @@ class Player(pygame.sprite.Sprite):
     def world_to_view_transform(self):
         #apply world to view coordinate transformation
         #rotate then transate
+        centre = (SCREEN_WIDTH//2,SCREEN_HEIGHT//2)
         rotated_image = pygame.transform.rotate(self.original_image, 90)
         rotated_rect = rotated_image.get_rect()
-        rotated_rect.center = (150,150)
+        rotated_rect.center = centre
         #blit to view
         VIEW_SURFACE.blit(rotated_image,rotated_rect)
         #draw the near plane
-        pygame.draw.line(VIEW_SURFACE,WHITE,translate(self.near_plane[0],(150,150)),translate(self.near_plane[1],(150,150)))
+        pygame.draw.line(VIEW_SURFACE,WHITE,translate(self.near_plane[0],centre),translate(self.near_plane[1],centre))
 
 class Wall(pygame.sprite.Sprite):
-    def __init__(self,pos_a,pos_b,colour):
+    def __init__(self,pos_a,pos_b):
         pygame.sprite.Sprite.__init__(self)
         self.pos_a = pos_a
         self.pos_b = pos_b
@@ -158,14 +183,15 @@ class Wall(pygame.sprite.Sprite):
     def world_to_view_transform(self):
         #find position relative to camera
         cam = (-player.position[0],-player.position[1])
+        centre = (SCREEN_WIDTH//2,SCREEN_HEIGHT//2)
         self.pos_a_view = translate(self.pos_a,cam)
         self.pos_b_view = translate(self.pos_b,cam)
         #rotate 90 degrees counter clockwise, then opposite camera motion
         opposite_cam = 90-player.direction
         self.pos_a_view = rotate_point(self.pos_a_view,opposite_cam)
         self.pos_b_view = rotate_point(self.pos_b_view,opposite_cam)
-        pygame.draw.line(VIEW_SURFACE,self.colour,translate(self.pos_a_view,(150,150)),
-                                                    translate(self.pos_b_view,(150,150)))
+        pygame.draw.line(VIEW_SURFACE,self.colour,translate(self.pos_a_view,centre),
+                                                    translate(self.pos_b_view,centre))
     
     def view_to_projection_transform(self):
         #Projection transformation
@@ -219,29 +245,14 @@ class Wall(pygame.sprite.Sprite):
             then add the position of the screen centre
         """
         for i in range(len(points)):
-            points[i] = scale(points[i],150,150)
-            points[i] = translate(points[i],(150,150))
+            points[i] = scale(points[i],SCREEN_WIDTH//2,SCREEN_HEIGHT//2)
+            points[i] = translate(points[i],(SCREEN_WIDTH//2,SCREEN_HEIGHT//2))
 
         pygame.draw.polygon(PROJECTION_SURFACE, self.colour, points,1)
 
-player = Player()
 GAME_OBJECTS = pygame.sprite.Group()
 RESTRICTED = pygame.sprite.Group()
-GAME_OBJECTS.add(player)
-
-wall = Wall((10,10),(290,10),GREEN)
-GAME_OBJECTS.add(wall)
-RESTRICTED.add(wall)
-wall = Wall((290,10),(290,290),BLUE)
-GAME_OBJECTS.add(wall)
-RESTRICTED.add(wall)
-wall = Wall((290,290),(10,290),YELLOW)
-GAME_OBJECTS.add(wall)
-RESTRICTED.add(wall)
-wall = Wall((10,290),(10,10),PURPLE)
-GAME_OBJECTS.add(wall)
-RESTRICTED.add(wall)
-
+player = importData('level.txt')
 running = True
 while running:
     VIEW_SURFACE.fill(BLACK)
@@ -255,19 +266,13 @@ while running:
 
     SCREEN.fill(BLACK)
 
-    MODEL_SURFACE.fill(BLACK)
-    GAME_OBJECTS.draw(MODEL_SURFACE)
-
-    SCREEN.blit(MODEL_SURFACE,MODEL_RECT)
     SCREEN.blit(VIEW_SURFACE,VIEW_RECT)
     SCREEN.blit(PROJECTION_SURFACE,PROJECTION_RECT)
 
-    pygame.draw.rect(SCREEN,WHITE,MODEL_RECT,1)
-    draw_text(SCREEN,"World Coordinates",16,70,20)
     pygame.draw.rect(SCREEN,WHITE,VIEW_RECT,1)
-    draw_text(SCREEN,"View Coordinates",16,390,20)
+    draw_text(SCREEN,"View Coordinates",16,60,20)
     pygame.draw.rect(SCREEN,WHITE,PROJECTION_RECT,1)
-    draw_text(SCREEN,"Projection Coordinates",16,730,20)
+    draw_text(SCREEN,"Projection Coordinates",16,SCREEN_WIDTH+100,20)
 
     CLOCK.tick()
     fps = CLOCK.get_fps()
