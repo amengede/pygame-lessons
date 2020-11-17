@@ -106,6 +106,7 @@ class Player(pygame.sprite.Sprite):
         self.camera_z = 30
         self.near_plane = ((-32,0),(32,0))
         self.energy = 0
+        self.mask = pygame.mask.from_surface(self.image)
     
     def update(self):
         #take inputs
@@ -119,11 +120,39 @@ class Player(pygame.sprite.Sprite):
             if self.direction < 0:
                 self.direction += 360
         if keystate[pygame.K_UP]:
-            change_in_position = (self.speed*math.cos(math.radians(self.direction)), -self.speed*math.sin(math.radians(self.direction)))
-            self.position = translate(self.position,change_in_position)
+            x_check = translate(self.position,(self.speed*math.cos(math.radians(self.direction)), 0))
+            y_check = translate(self.position,(0, -self.speed*math.sin(math.radians(self.direction))))
+
+            self.rect.center = x_check
+            hits = pygame.sprite.spritecollide(self, RESTRICTED, False)
+            if not hits:
+                self.position = x_check
+            else:
+                self.rect.center = self.position
+            
+            self.rect.center = y_check
+            hits = pygame.sprite.spritecollide(self, RESTRICTED, False)
+            if not hits:
+                self.position = y_check
+            else:
+                self.rect.center = self.position
         if keystate[pygame.K_DOWN]:
-            change_in_position = (-self.speed*math.cos(math.radians(self.direction)), self.speed*math.sin(math.radians(self.direction)))
-            self.position = translate(self.position,change_in_position)
+            x_check = translate(self.position,(-self.speed*math.cos(math.radians(self.direction)), 0))
+            y_check = translate(self.position,(0, self.speed*math.sin(math.radians(self.direction))))
+
+            self.rect.center = x_check
+            hits = pygame.sprite.spritecollide(self, RESTRICTED, False)
+            if not hits:
+                self.position = x_check
+            else:
+                self.rect.center = self.position
+            
+            self.rect.center = y_check
+            hits = pygame.sprite.spritecollide(self, RESTRICTED, False)
+            if not hits:
+                self.position = y_check
+            else:
+                self.rect.center = self.position
         if keystate[pygame.K_SPACE] and self.camera_z==30:
             self.energy = 20
         
@@ -179,6 +208,7 @@ class Wall(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.left = left
         self.rect.top = top
+        self.mask = pygame.mask.from_surface(self.image)
 
         #calculate normal by hand
         adj = self.pos_b[0]-self.pos_a[0]
@@ -204,7 +234,6 @@ class Wall(pygame.sprite.Sprite):
         if dot_product(dir_to_cam,self.normal)>0:
             #wall is already defined in world coordinates
             self.world_to_view_transform()
-            self.view_to_projection_transform()
 
     def world_to_view_transform(self):
         #find position relative to camera
@@ -217,13 +246,15 @@ class Wall(pygame.sprite.Sprite):
         self.pos_a_view = rotate_point(self.pos_a_view,opposite_cam)
         self.pos_b_view = rotate_point(self.pos_b_view,opposite_cam)
 
-        norm_start = ((self.pos_a_view[0]+self.pos_b_view[0])//2,(self.pos_a_view[1]+self.pos_b_view[1])//2)
-        norm_start = translate(norm_start,centre)
-        norm_components = rotate_point(scale(self.normal,10),opposite_cam)
-        norm_end = translate(norm_start,norm_components)
-        pygame.draw.line(VIEW_SURFACE,self.colour,translate(self.pos_a_view,centre),
-                                                    translate(self.pos_b_view,centre))
-        pygame.draw.line(VIEW_SURFACE,self.colour,norm_start,norm_end)
+        if (self.pos_a_view[1]<0 or self.pos_b_view[1]<0):
+            norm_start = ((self.pos_a_view[0]+self.pos_b_view[0])//2,(self.pos_a_view[1]+self.pos_b_view[1])//2)
+            norm_start = translate(norm_start,centre)
+            norm_components = rotate_point(scale(self.normal,10),opposite_cam)
+            norm_end = translate(norm_start,norm_components)
+            pygame.draw.line(VIEW_SURFACE,self.colour,translate(self.pos_a_view,centre),
+                                                        translate(self.pos_b_view,centre))
+            pygame.draw.line(VIEW_SURFACE,self.colour,norm_start,norm_end)
+            self.view_to_projection_transform()
     
     def view_to_projection_transform(self):
         #Projection transformation
