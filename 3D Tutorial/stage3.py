@@ -149,13 +149,13 @@ class Wall(pygame.sprite.Sprite):
         #Projection transformation
         #in the view portal, a point's height (y-coordinate) can represent its depth
         depth_a = -self.pos_a_view[1]
-        #depth_a = abs(self.pos_a_view[1])
+        depth_a = abs(self.pos_a_view[1])
         x_a = self.pos_a_view[0]/depth_a
         top_a = -(self.z-player.camera_z)/depth_a
-        bottom_a = -(self.z+self.height-player.camera_z)/depth_a
+        bottom_a = (self.z+self.height-player.camera_z)/depth_a
 
         depth_b = -self.pos_b_view[1]
-        #depth_b = abs(self.pos_b_view[1])
+        depth_b = abs(self.pos_b_view[1])
         x_b = self.pos_b_view[0]/depth_b
         top_b = -(self.z-player.camera_z)/depth_b
         bottom_b = -(self.z+self.height-player.camera_z)/depth_b
@@ -170,15 +170,17 @@ class Wall(pygame.sprite.Sprite):
             These points are now in normalised device coordinates (NDC),
             They range from -1 to 1 where:
                 x: -1 is left, 0 is centre, 1 is right
-                x: -1 is top, 0 is centre, 1 is bottom
+                y: -1 is top, 0 is centre, 1 is bottom
             and values outside this range are off the screen.
 
             In order to graph these points we need to multiply them by half the screen width and half the screen height,
             then add the position of the screen centre
         """
+        
         for i in range(len(points)):
             points[i] = scale(points[i],150,150)
             points[i] = translate(points[i],(150,150))
+        
 
         pygame.draw.polygon(PROJECTION_SURFACE, self.colour, points,1)
 

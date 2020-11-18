@@ -159,7 +159,7 @@ class Wall(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.pos_a = pos_a
         self.pos_b = pos_b
-        self.colour = colour
+        self.colour = GREEN
         self.z = 0
         self.height = 80
 

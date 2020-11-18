@@ -182,9 +182,12 @@ class Wall(pygame.sprite.Sprite):
         
         """Next, check if one of the points is behind the camera.
         If it is, then find the intersection point of the wall with the near plane"""
-
+        
         if depth_a >= 0:
-            (x_a,depth_a) = clip_line(((x_a,depth_a),(x_b,depth_b)),player.near_plane)
+            (x_a,depth_a) = clip_line(
+                                        ((x_a,depth_a),(x_b,depth_b)),
+                                        player.near_plane
+                                    )
         
         if depth_b >= 0:
             (x_b,depth_b) = clip_line(((x_a,depth_a),(x_b,depth_b)),player.near_plane)

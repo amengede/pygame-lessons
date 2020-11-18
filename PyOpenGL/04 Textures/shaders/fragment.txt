@@ -1,0 +1,12 @@
+#version 330 core
+
+in vec2 TexCoord;
+out vec4 Colour;
+
+uniform sampler2D TexSampler;
+void main()
+{
+	// pick a texture coordinate out from the texture and return that
+	// as the pixel colour
+	Colour = texture(TexSampler,TexCoord);
+}

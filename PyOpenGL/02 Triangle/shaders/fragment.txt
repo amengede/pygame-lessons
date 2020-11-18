@@ -1,0 +1,10 @@
+#version 330 core
+
+// the purpose of the fragment shader is to define the colour of each pixel.
+// thus, this program outputs a 4D vector of form (r,g,b,a)
+out vec4 Colour;
+
+void main()
+{
+	Colour = vec4(1.0, 0.5, 0.2, 1.0);
+}

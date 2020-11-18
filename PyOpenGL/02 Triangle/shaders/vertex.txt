@@ -1,0 +1,23 @@
+//fragment shader: defines how positions are loaded to the gpu
+
+//use opengl version 3.30 in core (modern) mode
+#version 330 core
+
+//more complicated programs will have layouts like:
+//
+// layout:
+//	location 0: position
+//	location 1: colour
+//	location 2: ...
+//	right now we're just taking a postion, it's an input variable of type 3D vector (x,y,z)
+
+layout (location=0) in vec3 pos;
+
+// the main program of the shader doesn't return anything, hence "void"
+void main()
+{
+	// The goal is to define the position of a point, this is done by
+	// setting it to the gl_position variable. Note that it needs to become a 4D vector with
+	// 4th component = 1
+	gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);
+}
