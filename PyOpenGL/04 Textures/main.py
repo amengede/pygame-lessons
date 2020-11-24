@@ -64,8 +64,8 @@ glVertexAttribPointer(texture_coordinate,2,GL_FLOAT,GL_FALSE,20,ctypes.c_void_p(
 """
     Create a texture object and bind it
 """
-texture = glGenTextures(1)
-glBindTexture(GL_TEXTURE_2D,texture)
+wood_texture = glGenTextures(1)
+glBindTexture(GL_TEXTURE_2D,wood_texture)
 
 """
     Set wrapping and filtering properties for texture
@@ -89,6 +89,33 @@ img_data = pg.image.tostring(image,'RGBA')
 glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,image_width,image_height,0,GL_RGBA,GL_UNSIGNED_BYTE,img_data)
 glGenerateMipmap(GL_TEXTURE_2D)
 
+"""
+    Create a texture object and bind it
+"""
+smile_texture = glGenTextures(1)
+glBindTexture(GL_TEXTURE_2D,smile_texture)
+
+"""
+    Set wrapping and filtering properties for texture
+"""
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+"""
+    load the texture, get its size, then convert it to a format opengl will understand.
+"""
+image = pg.image.load("gfx/smile.png").convert()
+image_width,image_height = image.get_rect().size
+img_data = pg.image.tostring(image,'RGBA')
+"""
+    Load data to texture,
+    (load_target, mipmap level (zero is a good value here as we haven't defined a mipmap),
+    data format, width, height, must be zero for legacy reason, format, data_type, data)
+"""
+glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,image_width,image_height,0,GL_RGBA,GL_UNSIGNED_BYTE,img_data)
+glGenerateMipmap(GL_TEXTURE_2D)
 ################################ Main Loop ####################################
 running = True
 while running:
@@ -100,7 +127,7 @@ while running:
     ################################ Rendering ################################
     glClear(GL_COLOR_BUFFER_BIT)
 
-    glBindTexture(GL_TEXTURE_2D,texture)
+    glBindTexture(GL_TEXTURE_2D,wood_texture)
     glBindVertexArray(vao)
     glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_INT,None)
     pg.display.flip()

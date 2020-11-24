@@ -25,6 +25,11 @@ pg.init()
 
     In general, options are "piped" together with the | operator.
     Under the hood, this is using the concept of bitmasks.
+
+    OPENGL    = 00000010
+    DOUBLEBUF = 00000100
+    +
+    OPENGL | DOUBLEBUF = 000000110
 """
 pg.display.set_mode((640,480),pg.OPENGL|pg.DOUBLEBUF)
 CLOCK = pg.time.Clock()
