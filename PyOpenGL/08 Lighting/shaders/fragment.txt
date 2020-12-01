@@ -1,0 +1,20 @@
+#version 330 core
+
+in vec2 TexCoord;
+in vec3 normalVector;
+in vec3 FragPos;
+
+out vec4 Colour;
+
+uniform sampler2D TexSampler;
+uniform vec3 ambient;
+uniform vec3 lightPos;
+uniform vec3 lightCol;
+void main()
+{
+	vec3 norm = normalize(normalVector);
+	vec3 lightDir = normalize(lightPos - FragPos);
+	float diffusionLevel = max(0.0,dot(norm,lightDir));
+	vec3 lightLevel = lightCol*diffusionLevel + ambient;
+	Colour = vec4(lightLevel,1.0) * texture(TexSampler,TexCoord);
+}

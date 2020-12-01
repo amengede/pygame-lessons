@@ -21,6 +21,7 @@ shader = compileProgram(compileShader(vertex_src,GL_VERTEX_SHADER),
                         compileShader(fragment_src,GL_FRAGMENT_SHADER))
 
 glUseProgram(shader)
+
 ################################ Define Triangle ##############################
 vertices = (
                  0.5,  0.5, 0, 1, 1,

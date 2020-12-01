@@ -1,0 +1,19 @@
+#version 330 core
+layout (location=0) in vec3 pos;
+layout (location=1) in vec2 tex;
+
+// Uniforms are another way of passing in
+// extra data which is used to render an object
+uniform mat4 myTransformation;
+
+out vec2 TexCoord;
+
+void main()
+{
+	// Coordinates go through the following series of transformations:
+	// Model -> View -> Projection
+	// Because of the way matrix multiplication works the transformations are read
+	// right to left in reality
+	gl_Position = myTransformation * vec4(pos.x, pos.y, pos.z, 1.0);
+	TexCoord = tex;
+}

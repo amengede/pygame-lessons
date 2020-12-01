@@ -110,7 +110,7 @@ glGenerateMipmap(GL_TEXTURE_2D)
 ################################ Transformations ##############################
 model = pyrr.matrix44.create_from_axis_rotation(axis=np.array([1,0,0]),theta=np.radians(-55),dtype=np.float32)
 view = pyrr.matrix44.create_from_translation(vec=np.array([0,0,-3]),dtype=np.float32)
-projection = pyrr.matrix44.create_perspective_projection(45, 640/480, 0.1, 10, dtype=np.float32)
+projection = pyrr.matrix44.create_perspective_projection(45, 640/480, 1, 10, dtype=np.float32)
 
 model_location = glGetUniformLocation(shader,"model")
 view_location = glGetUniformLocation(shader,"view")
