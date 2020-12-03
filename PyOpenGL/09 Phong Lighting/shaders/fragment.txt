@@ -1,0 +1,30 @@
+#version 330 core
+
+in vec2 TexCoord;
+in vec3 normalVector;
+in vec3 FragPos;
+
+out vec4 Colour;
+
+uniform sampler2D TexSampler;
+uniform vec3 ambient;
+uniform vec3 lightPos;
+uniform vec3 lightCol;
+uniform vec3 cameraPos;
+void main()
+{
+	//diffuse lighting
+	vec3 norm = normalize(normalVector);
+	vec3 lightDir = normalize(lightPos - FragPos);
+	float diffusionLevel = max(0.0,dot(norm,lightDir));
+
+	//specular lighting
+	float specularStrength = 1.0;
+	vec3 viewDir = normalize(cameraPos - FragPos);
+	vec3 reflectDir = reflect(-lightDir, norm);
+	float spec = pow(max(dot(viewDir, reflectDir), 0.0),128);
+	vec3 specular = specularStrength * spec * lightCol;
+
+	vec3 lightLevel =lightCol*diffusionLevel + ambient;
+	Colour = vec4(lightLevel,1.0) * texture(TexSampler,TexCoord) + vec4(specular,1.0);
+}

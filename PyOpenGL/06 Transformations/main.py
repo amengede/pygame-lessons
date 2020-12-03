@@ -82,7 +82,7 @@ while running:
     current_time = current_time = pg.time.get_ticks()/10
 
     translation = pyrr.matrix44.create_from_translation(np.array([0,1,0]),dtype=np.float32)
-    scale = pyrr.matrix44.create_from_scale(np.array([2,1,1]),dtype=np.float32)
+    scale = pyrr.matrix44.create_from_scale(np.array([2,0.5,1]),dtype=np.float32)
     rotation = pyrr.matrix44.create_from_z_rotation(np.radians(current_time),dtype=np.float32)
     second_rotation = pyrr.matrix44.create_from_x_rotation(np.radians(current_time/2),dtype=np.float32)
 
@@ -91,7 +91,7 @@ while running:
 
     interesting = pyrr.matrix44.multiply(rotation_then_translation,second_rotation)
 
-    glUniformMatrix4fv(trans_location,1,GL_FALSE,interesting)
+    glUniformMatrix4fv(trans_location,1,GL_FALSE,rotation_then_translation)
     ################################ Rendering ################################
     glClear(GL_COLOR_BUFFER_BIT)
 
