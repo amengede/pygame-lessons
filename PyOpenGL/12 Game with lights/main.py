@@ -346,17 +346,23 @@ class Light(pygame.sprite.Sprite):
         self.position = position
         self.colour = colour
         self.active = True
+        self.timer = 0
+        self.range = 500
         
     def update(self):
+        self.timer += t
+        if self.timer > self.range:
+            self.active = not self.active
+            self.timer = 0
         global current_lights
         if self.active and current_lights<MAX_LIGHTS:
             glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].isOn'),1,True)
 
             glUniform3fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].position'),1,self.position)
 
-            glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].constant'),1,1.0)
-            glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].linear'),1,0.045)
-            glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].quadratic'),1,0.0075)
+            glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].constant'),1,2.0)
+            glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].linear'),1,0.05)
+            glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].quadratic'),1,0.0025)
 
             glUniform3fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].ambient'),1,0.1*self.colour)
             glUniform3fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].diffuse'),1,1.0*self.colour)

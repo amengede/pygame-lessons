@@ -332,10 +332,10 @@ class Ceiling(pygame.sprite.Sprite):
         self.pos_d = pos_d - pos_a
         self.texture = texture
 
-        self.vertices = (self.pos_a[0], self.pos_a[1], 0, 0.0, 0.0, 1.0, 0.0, 0.0,
-                         self.pos_b[0], self.pos_b[1], 0, 0.0, 0.0, 1.0, 0.0, 1.0,
-                         self.pos_c[0], self.pos_c[1], 0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                         self.pos_d[0], self.pos_d[1], 0, 0.0, 0.0, 1.0, 1.0, 0.0)
+        self.vertices = (self.pos_a[0], self.pos_a[1], 0, 0.0, 0.0, -1.0, 0.0, 0.0,
+                         self.pos_b[0], self.pos_b[1], 0, 0.0, 0.0, -1.0, 0.0, 1.0,
+                         self.pos_c[0], self.pos_c[1], 0, 0.0, 0.0, -1.0, 1.0, 1.0,
+                         self.pos_d[0], self.pos_d[1], 0, 0.0, 0.0, -1.0, 1.0, 0.0)
         self.vertices = np.array(self.vertices,dtype=np.float32)
 
         self.vao = glGenVertexArrays(1)

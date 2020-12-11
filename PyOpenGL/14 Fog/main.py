@@ -11,7 +11,7 @@ pygame.init()
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT),
-                                    pygame.DOUBLEBUF|pygame.OPENGL|pygame.FULLSCREEN)
+                                    pygame.DOUBLEBUF|pygame.OPENGL)
 CLOCK = pygame.time.Clock()
 pygame.mouse.set_visible(False)
 
@@ -210,7 +210,7 @@ class Player(pygame.sprite.Sprite):
         camera_up = pyrr.vector3.cross(look_direction,camera_right)
 
         lookat_matrix = pyrr.matrix44.create_look_at(self.position,self.position + look_direction, camera_up, dtype=np.float32)
-        projection_matrix = pyrr.matrix44.create_perspective_projection(45,640/480,1,280,dtype=np.float32)
+        projection_matrix = pyrr.matrix44.create_perspective_projection(45,1920/720,1,280,dtype=np.float32)
 
         glUniformMatrix4fv(glGetUniformLocation(shader,"view"),1,GL_FALSE,lookat_matrix)
         glUniformMatrix4fv(glGetUniformLocation(shader,"projection"),1,GL_FALSE,projection_matrix)
