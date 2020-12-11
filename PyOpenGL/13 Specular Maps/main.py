@@ -148,7 +148,7 @@ def importTextures():
 
 def clearLights():
     for i in range(MAX_LIGHTS):
-        glUniform1fv(glGetUniformLocation(shader,f'pointLights[{i}].active'),1,False)
+        glUniform1fv(glGetUniformLocation(shader,f'pointLights[{i}].isOn'),1,False)
 ################ Classes ######################################################
 
 class Player(pygame.sprite.Sprite):
@@ -382,7 +382,7 @@ class Light(pygame.sprite.Sprite):
     def update(self):
         global current_lights
         if self.active and current_lights<MAX_LIGHTS:
-            glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].active'),1,True)
+            glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].isOn'),1,True)
 
             glUniform3fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].position'),1,self.position)
             glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].strength'),1,1)

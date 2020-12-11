@@ -7,7 +7,7 @@ in vec3 fragNormal;
 out vec4 Colour;
 
 struct PointLight{
-	bool active;
+	bool isOn;
 
 	vec3 position;
     float strength;
@@ -40,15 +40,15 @@ vec3 CalculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewD
 void main()
 {
 	vec3 viewDir = normalize(viewPos - fragPos);
-	vec3 output = vec3(0.0);
+	vec3 lightOutput = vec3(0.0);
 
 	for(int i = 0; i < MAX_POINT_LIGHTS; i++){
-		if(pointLights[i].active){
-			output += CalculatePointLight(pointLights[i], fragNormal, fragPos, viewDir);
+		if(pointLights[i].isOn){
+			lightOutput += CalculatePointLight(pointLights[i], fragNormal, fragPos, viewDir);
 		}
 	}
 
-	Colour = vec4(output, 1.0);
+	Colour = vec4(lightOutput, 1.0);
 }
 
 vec3 CalculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
