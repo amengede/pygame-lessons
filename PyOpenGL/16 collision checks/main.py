@@ -4,6 +4,7 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GL.shaders import compileProgram, compileShader
 import pyrr
+import random
 
 
 pygame.init()
@@ -138,7 +139,7 @@ def clearLights():
     for i in range(MAX_LIGHTS):
         glUniform1fv(glGetUniformLocation(shader,f'pointLights[{i}].isOn'),1,False)
 
-def checkCollisions(pointA,pointB):
+def checkCollisions(obj,pointA,pointB):
     """
         Reference: https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
     """
@@ -159,13 +160,13 @@ def checkCollisions(pointA,pointB):
         # General case 
         if ((o1 != o2) and (o3 != o4)):
             #check foot
-            if (wall.z + wall.height)<(player.position[2]):
-                if (wall.z + wall.height)>(player.position[2]-player.height+4):
+            if (wall.z + wall.height)<(obj.position[2]):
+                if (wall.z + wall.height)>(obj.position[2]-obj.height+4):
                     return True
                 else:
                     continue
             #check head
-            if wall.z>player.position[2]:
+            if wall.z>obj.position[2]:
                 continue
             #otherwise it's a regular wall
             return True
@@ -250,10 +251,10 @@ class Player:
 
         temp = np.array([0,0,0],dtype=np.float32)
 
-        if not checkCollisions(self.position,self.position+8*np.array([cos_ad,0,0],dtype=np.float32)):
+        if not checkCollisions(self,self.position,self.position+8*np.array([cos_ad,0,0],dtype=np.float32)):
             temp += self.speed*t*np.array([cos_ad,0,0],dtype=np.float32)/20
         
-        if not checkCollisions(self.position,self.position+8*np.array([0,sin_ad,0],dtype=np.float32)):
+        if not checkCollisions(self,self.position,self.position+8*np.array([0,sin_ad,0],dtype=np.float32)):
             temp += self.speed*t*np.array([0,sin_ad,0],dtype=np.float32)/20
         
         self.position += temp
@@ -416,9 +417,27 @@ class Light:
         self.position = position
         self.colour = colour
         self.active = True
+        self.height = 1
+        self.velocity = np.array([1 - 2*random.random(),1 - 2*random.random(),1 - 2*random.random()],dtype=np.float32)
         
     def update(self):
         global current_lights
+
+        checkX = self.position + np.array([self.velocity[0],0,0],dtype=np.float32)
+        if checkCollisions(self,self.position,checkX):
+            self.velocity[0] *= -1
+        
+        checkY = self.position + np.array([0,self.velocity[1],0],dtype=np.float32)
+        if checkCollisions(self,self.position,checkY):
+            self.velocity[1] *= -1
+        
+        if self.velocity[2]<0 and self.position[2]<0:
+            self.velocity[2] *= -1
+        elif self.velocity[2]>0 and self.position[2]>40:
+            self.velocity[2] *= -1
+        
+        self.position += min(t,10)*self.velocity/20
+
         if self.active and current_lights<MAX_LIGHTS:
             glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].isOn'),1,True)
 
