@@ -41,7 +41,7 @@ void main()
 {
     // fog calculation
     vec3 fogColour = vec3(0.5);
-    float fogAmount = length(viewPos - fragPos)/280;
+    float fogAmount = pow(gl_FragCoord.z,32);
 
 	vec3 viewDir = normalize(viewPos - fragPos);
 	vec3 lightOutput = vec3(0.0);

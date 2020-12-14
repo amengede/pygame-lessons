@@ -156,7 +156,7 @@ def checkCollisions(obj,pointA,pointB):
         o2 = orientation(pointA, pointB, (x4,y4)) 
         o3 = orientation((x3,y3), (x4,y4), pointA) 
         o4 = orientation((x3,y3), (x4,y4), pointB) 
-  
+
         # General case 
         if ((o1 != o2) and (o3 != o4)):
             #check foot
@@ -250,13 +250,14 @@ class Player:
         sin_ad = np.sin(np.radians(actual_direction),dtype=np.float32)
 
         temp = np.array([0,0,0],dtype=np.float32)
-
+        #(cos,0,0): x direction
+        #8*(cos,0,0) = (8*cos,0,0) 8 pixels in x direction
         if not checkCollisions(self,self.position,self.position+8*np.array([cos_ad,0,0],dtype=np.float32)):
             temp += self.speed*t*np.array([cos_ad,0,0],dtype=np.float32)/20
         
         if not checkCollisions(self,self.position,self.position+8*np.array([0,sin_ad,0],dtype=np.float32)):
             temp += self.speed*t*np.array([0,sin_ad,0],dtype=np.float32)/20
-        
+
         self.position += temp
     
     def look(self):
@@ -445,12 +446,12 @@ class Light:
             glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].strength'),1,1)
 
             glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].constant'),1,1.0)
-            glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].linear'),1,0.045)
-            glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].quadratic'),1,0.0075)
+            glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].linear'),1,0.1)
+            glUniform1fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].quadratic'),1,0.05)
 
-            glUniform3fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].ambient'),1,0.05*self.colour)
-            glUniform3fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].diffuse'),1,1.0*self.colour)
-            glUniform3fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].specular'),1,0.6*self.colour)
+            glUniform3fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].ambient'),1,0)
+            glUniform3fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].diffuse'),1,0.8*self.colour)
+            glUniform3fv(glGetUniformLocation(shader,f'pointLights[{current_lights}].specular'),1,1.0*self.colour)
             current_lights += 1
     
     def draw(self):
