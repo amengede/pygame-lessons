@@ -306,7 +306,7 @@ while running:
     pygame.draw.rect(SCREEN,WHITE,PROJECTION_RECT,1)
     draw_text(SCREEN,"Projection Coordinates",16,SCREEN_WIDTH+100,20)
 
-    CLOCK.tick()
+    CLOCK.tick(60)
     fps = CLOCK.get_fps()
     pygame.display.set_caption("Running at "+str(int(fps))+" fps")
     pygame.display.update()

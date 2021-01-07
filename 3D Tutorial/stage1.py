@@ -1,8 +1,11 @@
-################ 3D Game ######################################################
-
-import pygame
+"""
+    3D Game
+"""
+################ Imports ######################################################
 import math
+import pygame
 
+################ Configuration ################################################
 pygame.init()
 
 BLACK = (0,0,0)
@@ -26,6 +29,9 @@ PROJECTION_SURFACE = pygame.Surface((300,300))
 PROJECTION_RECT = pygame.Rect(650,50,300,300)
 
 font_name = pygame.font.match_font('arial')
+
+################ Helper Functions #############################################
+
 def draw_text(surf, text, size, x, y):
     font = pygame.font.Font(font_name, size)
     text_surface = font.render(text, True, WHITE)
@@ -37,7 +43,9 @@ def translate(point,translation):
     (x,y) = point
     #d = delta = change
     (dx,dy) = translation
-    return (int(x + dx),int(y + dy))
+    return (x + dx,y + dy)
+
+################ Classes ######################################################
 
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -51,7 +59,7 @@ class Player(pygame.sprite.Sprite):
         self.image = self.original_image.copy()
         self.rect = self.image.get_rect()
         self.speed = 2
-    
+
     def update(self):
         #take inputs
         keystate = pygame.key.get_pressed()
@@ -72,7 +80,7 @@ class Player(pygame.sprite.Sprite):
         if keystate[pygame.K_DOWN]:
             change_in_position = (-self.speed*math.cos(math.radians(self.direction)), self.speed*math.sin(math.radians(self.direction)))
             self.position = translate(self.position,change_in_position)
-        
+
         #apply transformations
         self.model_to_world_transform()
         self.world_to_view_transform()
@@ -84,7 +92,7 @@ class Player(pygame.sprite.Sprite):
 
         #then translate into place
         self.rect = self.image.get_rect()
-        self.rect.center = self.position
+        self.rect.center = (int(self.position[0]),int(self.position[1]))
 
     def world_to_view_transform(self):
         #apply world to view coordinate transformation
@@ -113,19 +121,23 @@ class Wall(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.left = left
         self.rect.top = top
-    
+
     def update(self):
         #wall is already defined in world coordinates
         self.world_to_view_transform()
-    
+
     def world_to_view_transform(self):
         #find position relative to camera
         cam = (-player.position[0],-player.position[1])
-        self.pos_a_view = translate(self.pos_a,cam)
-        self.pos_b_view = translate(self.pos_b,cam)
-        pygame.draw.line(VIEW_SURFACE,self.colour,translate(self.pos_a_view,(150,150)),
-                                                    translate(self.pos_b_view,(150,150)))
+        cam_pos_a = translate(self.pos_a,cam)
+        cam_pos_b = translate(self.pos_b,cam)
 
+        self.pos_a_view = translate(cam_pos_a,(150,150))
+        self.pos_b_view = translate(cam_pos_b,(150,150))
+        pygame.draw.line(VIEW_SURFACE,self.colour,(int(self.pos_a_view[0]),int(self.pos_a_view[1])),
+                                                    (int(self.pos_b_view[0]),int(self.pos_b_view[1])))
+
+################ Game Objects #################################################
 
 player = Player()
 GAME_OBJECTS = pygame.sprite.Group()
@@ -145,21 +157,22 @@ wall = Wall((10,290),(10,10),PURPLE)
 GAME_OBJECTS.add(wall)
 RESTRICTED.add(wall)
 
-running = True
-while running:
+################ Game Loop ####################################################
+
+RUNNING = True
+while RUNNING:
+    ################ Reset Surfaces ###########################################
     VIEW_SURFACE.fill(BLACK)
     MODEL_SURFACE.fill(BLACK)
     PROJECTION_SURFACE.fill(BLACK)
-
+    SCREEN.fill(BLACK)
+    ################ Handle Events ############################################
     for event in pygame.event.get():
         if event.type==pygame.QUIT:
-            running = False
-    
+            RUNNING = False
+    ################ Update ###################################################
     GAME_OBJECTS.update()
-
-    SCREEN.fill(BLACK)
-
-    
+    ################ Render ###################################################
     GAME_OBJECTS.draw(MODEL_SURFACE)
 
     SCREEN.blit(MODEL_SURFACE,MODEL_RECT)
@@ -172,8 +185,11 @@ while running:
     draw_text(SCREEN,"View Coordinates",16,390,20)
     pygame.draw.rect(SCREEN,WHITE,PROJECTION_RECT,1)
     draw_text(SCREEN,"Projection Coordinates",16,730,20)
-
-    CLOCK.tick()
+    ################ Clock etc ################################################
+    CLOCK.tick(60)
     fps = CLOCK.get_fps()
     pygame.display.set_caption("Running at "+str(int(fps))+" fps")
     pygame.display.update()
+
+################ Shutdown #####################################################
+pygame.quit()
